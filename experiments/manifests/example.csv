@@ -1,0 +1,4 @@
+sample_id,image_path,split,is_known,expected_person_id,scene,session_id
+known-001,../../data/evaluation/known_001.jpg,validation,true,1,normal_indoor,known-session-02
+unknown-001,../../data/evaluation/unknown_001.jpg,validation,false,,normal_indoor,unknown-session-01
+

@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==8.4.2
+pytest-cov==6.3.0
+ruff==0.13.3

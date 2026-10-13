@@ -1,0 +1,46 @@
+{
+  "camera": {
+    "default_index": 0,
+    "probe_indices": [0, 1, 2, 3, 4, 5],
+    "width": 640,
+    "height": 480,
+    "preview_fps": 30,
+    "recognition_interval_ms": 600,
+    "result_ttl_ms": 2500
+  },
+  "models": {
+    "detector": "models/face_detection_yunet_2023mar.onnx",
+    "recognizer": "models/face_recognition_sface_2021dec.onnx"
+  },
+  "detection": {
+    "score_threshold": 0.9,
+    "nms_threshold": 0.3,
+    "top_k": 5000,
+    "detect_scale": 0.5
+  },
+  "quality": {
+    "min_face_ratio": 0.18,
+    "min_blur_variance": 40.0,
+    "min_brightness": 45.0,
+    "max_brightness": 215.0
+  },
+  "matching": {
+    "cosine_threshold": 0.42,
+    "top_k": 3
+  },
+  "tracking": {
+    "max_faces": 5,
+    "iou_threshold": 0.3,
+    "max_gap_ms": 2000,
+    "confirmation_frames": 3
+  },
+  "enrollment": {
+    "minimum_samples": 5,
+    "target_samples": 10
+  },
+  "storage": {
+    "database": "data/gallery.db",
+    "samples_dir": "data/samples"
+  },
+  "preprocess_version": "yunet-aligncrop-sface-v1"
+}

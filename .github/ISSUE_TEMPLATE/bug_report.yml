@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible problem / 报告可复现的问题
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 运行环境
+      description: OS, Python, OpenCV, PySide6 versions. Remove local paths and names from logs.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction / 复现步骤
+      description: Commands, expected result, actual result. Do not attach personal face images or databases.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / 脱敏日志
+      render: text

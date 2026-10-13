@@ -1,0 +1,24 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--strict-markers"
+markers = ["integration: requires downloaded ONNX models (never uses a real camera)"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv", "data", "models", "dist"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"experiments/*.py" = ["E402"]
+"tools/*.py" = ["E402"]
+
+[tool.coverage.run]
+source = ["app", "experiments"]
+omit = ["app/ui/*", "experiments/plot_results.py"]
+
+[tool.coverage.report]
+show_missing = true
