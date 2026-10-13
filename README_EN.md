@@ -6,12 +6,13 @@ A local desktop face comparison application using **YuNet**, **SFace**, **OpenCV
 
 [![Checks](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml/badge.svg)](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml)
 
-![Empty-gallery startup screen](docs/assets/ui-preview.png)
+![FaceCompare recognition workspace](docs/assets/ui-preview.png)
 
-The real application with an empty gallery and no personal data. The desktop interface is in Chinese.
+The refreshed workspace rendered from the real application with an empty gallery and no personal data. The desktop interface is in Chinese.
 
 ## Features
 
+- Card-based workspace with separate camera controls, recognition results, gallery counts, and expandable run logs.
 - Live preview, snapshot recognition, continuous recognition and image-only JSON CLI.
 - Identity templates with cosine similarity and unknown-person rejection.
 - Enrollment, additional samples, preview, deletion, persistence and immediate template updates.
@@ -47,6 +48,8 @@ python main.py --version
 ```
 
 Image recognition uses the configured gallery without opening a camera or writing a recognition log. It creates an empty gallery if none exists. Outcomes such as `unknown` and `no_face` return exit code 0; input/environment errors return 1.
+
+Switch between the live view and analysis snapshot on the left. The sidebar shows results, person/sample counts, and per-face candidates; it scrolls in smaller windows. Expand the run log at the bottom for device and recognition events. Enrollment includes sample-count progress, and gallery management pairs the person list with a sample preview.
 
 ## Identification and evaluation
 

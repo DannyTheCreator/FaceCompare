@@ -4,15 +4,16 @@ import uuid
 from collections.abc import Callable
 
 import numpy as np
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QProgressBar,
     QPushButton,
     QVBoxLayout,
 )
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 from ..service import FaceComparisonService
 from ..types import PreparedSample
 from ..workers import TaskWorker
+from .style import apply_theme
 
 
 class EnrollDialog(QDialog):
@@ -36,7 +38,8 @@ class EnrollDialog(QDialog):
         self.worker: TaskWorker | None = None
         self._saved = False
         self.setWindowTitle("人员录入 / 补充样本")
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(560)
+        apply_theme(self)
 
         self.person_combo = QComboBox()
         self.person_combo.addItem("新增人员", None)
@@ -46,12 +49,14 @@ class EnrollDialog(QDialog):
                 person.person_id,
             )
         self.name_edit = QLineEdit()
+        self.name_edit.setPlaceholderText("输入人员姓名")
         self.external_id_edit = QLineEdit()
         self.external_id_edit.setPlaceholderText("可选，例如学号；姓名不作为主键")
         self.session_edit = QLineEdit(uuid.uuid4().hex[:12])
         self.session_edit.setToolTip("同一次拍摄共用会话编号；注册、验证、测试必须使用不同会话。")
 
         form = QFormLayout()
+        form.setSpacing(14)
         form.addRow("录入方式", self.person_combo)
         form.addRow("姓名", self.name_edit)
         form.addRow("内部编号", self.external_id_edit)
@@ -61,13 +66,17 @@ class EnrollDialog(QDialog):
             "请依次采集正面、轻微左右转头和自然表情。每次只保留一张脸，避免连续重复帧。"
         )
         self.hint.setWordWrap(True)
-        self.hint.setStyleSheet("color: #555;")
+        self.hint.setProperty("role", "subtitle")
         self.count_label = QLabel()
-        self.count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.count_label.setProperty("role", "sectionTitle")
+        self.progress = QProgressBar()
+        self.progress.setTextVisible(False)
         self.status_label = QLabel("等待采集")
+        self.status_label.setProperty("role", "subtitle")
         self.status_label.setWordWrap(True)
 
         self.capture_button = QPushButton("采集当前画面")
+        self.capture_button.setProperty("role", "primary")
         self.undo_button = QPushButton("撤销上一张")
         buttons_row = QHBoxLayout()
         buttons_row.addWidget(self.capture_button)
@@ -77,12 +86,27 @@ class EnrollDialog(QDialog):
             QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.button(QDialogButtonBox.StandardButton.Save).setText("保存录入")
+        self.button_box.button(QDialogButtonBox.StandardButton.Save).setProperty("role", "primary")
         self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
         layout = QVBoxLayout(self)
-        layout.addLayout(form)
+        layout.setContentsMargins(24, 24, 24, 20)
+        layout.setSpacing(18)
+        title = QLabel("录入人员")
+        title.setProperty("role", "pageTitle")
+        subtitle = QLabel("采集不同角度的清晰人脸，建立可靠的身份样本")
+        subtitle.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        details = QFrame()
+        details.setProperty("role", "card")
+        details_layout = QVBoxLayout(details)
+        details_layout.setContentsMargins(20, 20, 20, 20)
+        details_layout.addLayout(form)
+        layout.addWidget(details)
         layout.addWidget(self.hint)
         layout.addWidget(self.count_label)
+        layout.addWidget(self.progress)
         layout.addWidget(self.status_label)
         layout.addLayout(buttons_row)
         layout.addWidget(self.button_box)
@@ -117,6 +141,8 @@ class EnrollDialog(QDialog):
         self.count_label.setText(
             f"已采集 {len(self.samples)} 张；最低 {minimum} 张，建议目标 {target} 张"
         )
+        self.progress.setRange(0, target)
+        self.progress.setValue(min(len(self.samples), target))
         busy = self.worker is not None
         self.session_edit.setEnabled(not busy)
         self.person_combo.setEnabled(not busy)

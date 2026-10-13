@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Redesigned the Qt workspace with a shared teal theme, separate camera controls, gallery counts and expandable logs.
+- Unified enrollment and gallery dialogs, added sample-count progress and scrollable results for smaller windows.
+- Refreshed the bilingual UI guide and startup preview using the real application with an isolated empty gallery.
+
 ## 0.4.0
 
 - Retryable file-deletion journal, bounded sample paths, integrity counts and transactional feature/version snapshots.

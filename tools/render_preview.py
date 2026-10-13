@@ -24,13 +24,14 @@ from app.ui.style import configure_application
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "docs/assets/ui-preview.png")
+    parser.add_argument("--config", type=Path, help="Model/config paths; gallery stays temporary")
     args = parser.parse_args()
     application = QApplication([])
     configure_application(application)
     with tempfile.TemporaryDirectory(prefix="facecompare-preview-") as temporary:
         root = Path(temporary)
         config = replace(
-            load_config(), storage=StorageConfig(root / "gallery.db", root / "samples")
+            load_config(args.config), storage=StorageConfig(root / "gallery.db", root / "samples")
         )
         window = MainWindow(FaceComparisonService(config))
         window.show()

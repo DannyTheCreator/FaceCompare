@@ -4,10 +4,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
+    QFrame,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
+    QStackedWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -15,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from ..service import FaceComparisonService
 from ..workers import TaskWorker
+from .style import ImagePreview, apply_theme
 
 
 class GalleryDialog(QDialog):
@@ -23,20 +27,24 @@ class GalleryDialog(QDialog):
         self.service = service
         self.worker = None
         self.setWindowTitle("标准库管理")
-        self.resize(800, 520)
+        self.resize(1040, 640)
+        self.setMinimumSize(900, 560)
+        apply_theme(self)
 
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["姓名 / 样本", "人员ID", "样本数 / 会话", "创建时间"])
         self.tree.setAlternatingRowColors(True)
-        self.preview = QLabel("选择样本可预览")
+        self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.preview = ImagePreview("选择样本可预览", "样本图像仅保存在本机")
         self.preview.setMinimumSize(280, 280)
         self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview.setStyleSheet("background: #202020; color: #ddd;")
 
         self.delete_button = QPushButton("删除所选")
+        self.delete_button.setProperty("role", "danger")
         self.delete_button.setEnabled(False)
         self.status_label = QLabel("选择人员或样本后可删除；删除人员会同时删除全部样本。")
         self.status_label.setWordWrap(True)
+        self.status_label.setProperty("role", "subtitle")
         self.check_button = QPushButton("检查库完整性")
         self.cleanup_button = QPushButton("重试待清理图片")
         self.refresh_button = QPushButton("刷新")
@@ -47,10 +55,42 @@ class GalleryDialog(QDialog):
         button_row.addStretch()
         button_row.addWidget(self.delete_button)
 
-        content = QHBoxLayout()
-        content.addWidget(self.tree, 3)
-        content.addWidget(self.preview, 2)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 20)
+        layout.setSpacing(18)
+        title = QLabel("人员标准库")
+        title.setProperty("role", "pageTitle")
+        subtitle = QLabel("管理已录入人员、拍摄会话与本地人脸样本")
+        subtitle.setProperty("role", "subtitle")
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        content = QHBoxLayout()
+        content.setSpacing(16)
+        list_card = QFrame()
+        list_card.setProperty("role", "card")
+        list_layout = QVBoxLayout(list_card)
+        list_layout.setContentsMargins(18, 18, 18, 18)
+        list_title = QLabel("人员与样本")
+        list_title.setProperty("role", "sectionTitle")
+        list_layout.addWidget(list_title)
+        self.pages = QStackedWidget()
+        empty = QLabel("标准库还是空的\n\n返回主界面，开启摄像头后录入第一位人员")
+        empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty.setWordWrap(True)
+        empty.setProperty("role", "subtitle")
+        self.pages.addWidget(empty)
+        self.pages.addWidget(self.tree)
+        list_layout.addWidget(self.pages, 1)
+        preview_card = QFrame()
+        preview_card.setProperty("role", "card")
+        preview_layout = QVBoxLayout(preview_card)
+        preview_layout.setContentsMargins(18, 18, 18, 18)
+        preview_title = QLabel("样本预览")
+        preview_title.setProperty("role", "sectionTitle")
+        preview_layout.addWidget(preview_title)
+        preview_layout.addWidget(self.preview, 1)
+        content.addWidget(list_card, 3)
+        content.addWidget(preview_card, 2)
         layout.addLayout(content)
         layout.addWidget(self.status_label)
         layout.addLayout(button_row)
@@ -93,8 +133,9 @@ class GalleryDialog(QDialog):
                 )
                 item.addChild(child)
             item.setExpanded(True)
-        for column in range(4):
+        for column in range(1, 4):
             self.tree.resizeColumnToContents(column)
+        self.pages.setCurrentIndex(1 if self.tree.topLevelItemCount() else 0)
         if not self.tree.topLevelItemCount():
             self.status_label.setText("标准库为空。返回主界面，开启摄像头后使用“人员录入”。")
 

@@ -10,16 +10,19 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
-    QGroupBox,
+    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLayout,
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QTabWidget,
+    QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -31,6 +34,7 @@ from ..types import FramePacket, RecognitionResult, SceneResult
 from ..workers import CameraWorker, InferenceWorker
 from .enroll_dialog import EnrollDialog
 from .gallery_dialog import GalleryDialog
+from .style import ImagePreview, apply_theme, set_tone
 
 
 def _pixmap_from_bgr(image: np.ndarray, target_size) -> QPixmap:
@@ -63,7 +67,8 @@ class MainWindow(QMainWindow):
         self._last_queue_ms = None
 
         self.setWindowTitle("FaceCompare · 人脸比对")
-        self.resize(1320, 880)
+        self.resize(1400, 920)
+        self.setMinimumSize(1080, 760)
         self._build_ui()
         self._refresh_gallery_status()
         self.result_timer = QTimer(self)
@@ -74,13 +79,72 @@ class MainWindow(QMainWindow):
         self.rate_timer.start(1000)
 
     def _build_ui(self) -> None:
-        self.preview = QLabel("请选择设备并开启摄像头")
-        self.preview.setMinimumSize(560, 420)
-        self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview.setStyleSheet("background: #151515; color: #ddd; font-size: 18px;")
+        def section(title):
+            label = QLabel(title)
+            label.setProperty("role", "sectionTitle")
+            return label
+
+        def card():
+            frame = QFrame()
+            frame.setProperty("role", "card")
+            layout = QVBoxLayout(frame)
+            layout.setContentsMargins(18, 16, 18, 16)
+            layout.setSpacing(12)
+            layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+            return frame, layout
+
+        root = QWidget()
+        root_layout = QVBoxLayout(root)
+        root_layout.setContentsMargins(24, 20, 24, 8)
+        root_layout.setSpacing(18)
+        header = QFrame()
+        header.setObjectName("header")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        mark = QLabel("F")
+        mark.setObjectName("brandMark")
+        mark.setFixedSize(46, 46)
+        mark.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(mark)
+        brand = QVBoxLayout()
+        brand.setSpacing(2)
+        title = QLabel("FaceCompare")
+        title.setObjectName("brandTitle")
+        subtitle = QLabel("人脸识别工作台 · 采集、识别与人员管理")
+        subtitle.setProperty("role", "subtitle")
+        brand.addWidget(title)
+        brand.addWidget(subtitle)
+        header_layout.addLayout(brand)
+        header_layout.addStretch()
+        local_badge = QLabel("本地运行")
+        local_badge.setProperty("role", "badge")
+        header_layout.addWidget(local_badge)
+        root_layout.addWidget(header)
+
+        self.preview = ImagePreview(
+            "请选择设备并开启摄像头", "实时画面将在这里显示 · 图像仅在本机处理"
+        )
+        self.preview.setMinimumSize(560, 350)
+        self.analysis_preview = ImagePreview(
+            "识别分析快照，等待识别", "识别完成后，查看人脸位置与匹配结果"
+        )
+        self.analysis_preview.setMinimumSize(560, 350)
+        self.views = QTabWidget()
+        self.views.addTab(self.preview, "实时画面")
+        self.views.addTab(self.analysis_preview, "识别分析快照")
+        preview_card, preview_layout = card()
+        preview_heading = QHBoxLayout()
+        preview_heading.addWidget(section("摄像头工作区"))
+        preview_heading.addStretch()
+        self.device_badge = QLabel("设备未连接")
+        self.device_badge.setProperty("role", "deviceBadge")
+        preview_heading.addWidget(self.device_badge)
+        preview_layout.addLayout(preview_heading)
+        preview_layout.addWidget(self.views, 1)
 
         self.camera_combo = QComboBox()
         self.camera_combo.setAccessibleName("摄像头编号")
+        self.camera_combo.setMinimumWidth(130)
         self.camera_combo.setToolTip(
             "编号来自配置，并不表示设备已检测到。打开后请用实时画面确认设备。"
         )
@@ -90,125 +154,166 @@ class MainWindow(QMainWindow):
         if default_index >= 0:
             self.camera_combo.setCurrentIndex(default_index)
         self.open_button = QPushButton("开启摄像头")
+        self.open_button.setProperty("role", "primary")
         self.close_button = QPushButton("关闭摄像头")
         self.close_button.setEnabled(False)
         self.capture_button = QPushButton("抓拍识别")
+        self.capture_button.setProperty("role", "primary")
         self.capture_button.setEnabled(False)
         self.continuous_check = QCheckBox("连续识别")
         self.scene_check = QCheckBox("多人识别 / 跟踪")
-        self.scene_check.setToolTip("轻量IoU轨迹关联；连续多次匹配后确认姓名，快速交叉可能换号")
-
+        self.scene_check.setToolTip("连续多次匹配后确认姓名；快速移动或交叉可能改变轨迹号")
+        controls, controls_layout = card()
         camera_row = QHBoxLayout()
-        camera_row.addWidget(self.camera_combo)
+        camera_row.setSpacing(10)
+        camera_row.addWidget(self.camera_combo, 1)
         camera_row.addWidget(self.open_button)
         camera_row.addWidget(self.close_button)
         camera_row.addWidget(self.capture_button)
-        camera_row.addWidget(self.continuous_check)
+        controls_layout.addLayout(camera_row)
         mode_row = QHBoxLayout()
+        mode_row.setSpacing(24)
+        mode_row.addWidget(self.continuous_check)
         mode_row.addWidget(self.scene_check)
         mode_row.addStretch()
-
-        left = QWidget()
-        left_layout = QVBoxLayout(left)
-        self.analysis_preview = QLabel("识别分析快照，等待识别")
-        self.analysis_preview.setMinimumSize(560, 420)
-        self.analysis_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.analysis_preview.setStyleSheet("background: #151515; color: #ddd; font-size: 18px;")
-        self.views = QTabWidget()
-        self.views.addTab(self.preview, "实时画面")
-        self.views.addTab(self.analysis_preview, "识别分析快照")
-        left_layout.addWidget(self.views, 1)
-        left_layout.addLayout(camera_row)
-        left_layout.addLayout(mode_row)
-        self.guide_label = QLabel("① 选择并开启设备  →  ② 录入人员  →  ③ 抓拍或连续识别")
+        controls_layout.addLayout(mode_row)
+        self.guide_label = QLabel("01  开启设备     →     02  录入人员     →     03  开始识别")
+        self.guide_label.setProperty("role", "subtitle")
         self.guide_label.setWordWrap(True)
-        left_layout.addWidget(self.guide_label)
+        controls_layout.addWidget(self.guide_label)
         self.rate_label = QLabel("预览 FPS —  |  有效结果 — 次/秒  |  排队 — ms")
+        self.rate_label.setProperty("role", "subtitle")
         self.rate_label.setToolTip(
             "最近5秒的预览与有效结果到达速率；后台识别吞吐请使用视频基准测量。"
         )
         self.rate_label.setWordWrap(True)
+
+        left = QWidget()
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(14)
+        left_layout.addWidget(preview_card, 1)
+        left_layout.addWidget(controls)
         left_layout.addWidget(self.rate_label)
 
-        result_group = QGroupBox("识别结果")
-        result_form = QFormLayout(result_group)
+        result_card, result_layout = card()
+        result_layout.addWidget(section("识别结果"))
         self.result_label = QLabel("等待识别")
+        self.result_label.setObjectName("resultValue")
         self.result_label.setWordWrap(True)
-        self.result_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        result_layout.addWidget(self.result_label)
+        result_form = QFormLayout()
+        result_form.setVerticalSpacing(7)
         self.score_label = QLabel("—")
         self.threshold_label = QLabel(f"{self.service.matcher.threshold:.3f}")
         self.latency_label = QLabel("—")
         self.updated_label = QLabel("—")
-        result_form.addRow("状态", self.result_label)
-        result_form.addRow("余弦相似度", self.score_label)
-        result_form.addRow("当前阈值", self.threshold_label)
-        result_form.addRow("算法 / 端到端", self.latency_label)
-        result_form.addRow("更新时间", self.updated_label)
-        self.result_preview = QLabel("识别快照")
-        self.result_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.result_preview.setMinimumSize(220, 130)
-        self.result_preview.setMaximumHeight(190)
-        result_form.addRow(self.result_preview)
+        for title, value in (
+            ("余弦相似度", self.score_label),
+            ("接受阈值", self.threshold_label),
+            ("算法 / 端到端", self.latency_label),
+            ("最近更新", self.updated_label),
+        ):
+            name = QLabel(title)
+            name.setProperty("role", "subtitle")
+            result_form.addRow(name, value)
+        result_layout.addLayout(result_form)
+        self.result_preview = ImagePreview("识别快照将在这里显示")
+        self.result_preview.setMinimumSize(220, 90)
+        self.result_preview.setMaximumHeight(110)
+        result_layout.addWidget(self.result_preview)
 
-        self.enroll_button = QPushButton("人员录入 / 补充样本")
-        self.gallery_button = QPushButton("标准库管理")
+        actions, actions_layout = card()
+        actions_layout.addWidget(section("人员标准库"))
+        metrics = QHBoxLayout()
+        self.person_count = QLabel("0")
+        self.sample_count = QLabel("0")
+        for caption, value in (("已录入人员", self.person_count), ("人脸样本", self.sample_count)):
+            column = QVBoxLayout()
+            column.setSpacing(0)
+            value.setProperty("role", "metricValue")
+            column.addWidget(value)
+            label = QLabel(caption)
+            label.setProperty("role", "subtitle")
+            column.addWidget(label)
+            metrics.addLayout(column, 1)
+        actions_layout.addLayout(metrics)
         self.gallery_status = QLabel()
+        self.gallery_status.setProperty("role", "subtitle")
         self.gallery_status.setWordWrap(True)
-        actions = QGroupBox("标准库")
-        actions_layout = QVBoxLayout(actions)
         actions_layout.addWidget(self.gallery_status)
-        actions_layout.addWidget(self.enroll_button)
-        actions_layout.addWidget(self.gallery_button)
+        self.enroll_button = QPushButton("录入 / 补充样本")
+        self.enroll_button.setProperty("role", "primary")
+        self.enroll_button.setAccessibleName("人员录入 / 补充样本")
+        self.gallery_button = QPushButton("标准库管理")
+        action_row = QHBoxLayout()
+        action_row.addWidget(self.enroll_button, 1)
+        action_row.addWidget(self.gallery_button, 1)
+        actions_layout.addLayout(action_row)
 
         self.candidate_tree = QTreeWidget()
-        self.candidate_tree.setHeaderLabels(["轨迹 / 排名", "结果 / 候选", "相似度", "连续确认"])
+        self.candidate_tree.setHeaderLabels(["轨迹 / 排名", "结果 / 候选", "相似度", "确认"])
         for column in (0, 2, 3):
             self.candidate_tree.header().setSectionResizeMode(
                 column, QHeaderView.ResizeMode.ResizeToContents
             )
         self.candidate_tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.candidate_tree.setAlternatingRowColors(True)
-        self.candidate_tree.setMinimumHeight(150)
-        self.candidate_tree.setToolTip("候选排序只用于解释匹配；未知或待确认状态不会因此接受身份")
-        candidate_group = QGroupBox("人脸与候选解释")
-        candidate_layout = QVBoxLayout(candidate_group)
-        candidate_layout.addWidget(self.candidate_tree)
+        self.candidate_tree.setMinimumHeight(115)
+        self.candidate_tree.setToolTip("候选排序用于解释匹配；未知或待确认状态不会接受身份")
+        candidates, candidates_layout = card()
+        candidates_layout.addWidget(section("人脸与候选"))
+        candidates_layout.addWidget(self.candidate_tree, 1)
 
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMaximumBlockCount(300)
-        log_group = QGroupBox("运行日志")
-        log_layout = QVBoxLayout(log_group)
-        log_layout.addWidget(self.log)
-
+        self.log.setMaximumHeight(85)
+        self.log.setPlaceholderText("设备连接与识别事件会显示在这里")
+        self.log.setVisible(False)
+        log_toggle = QToolButton()
+        log_toggle.setText("运行日志")
+        log_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        log_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        log_toggle.setCheckable(True)
+        log_toggle.toggled.connect(self.log.setVisible)
+        log_toggle.toggled.connect(
+            lambda checked: log_toggle.setArrowType(
+                Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow
+            )
+        )
         right = QWidget()
-        right.setMinimumWidth(460)
+        right.setObjectName("rightContent")
+        right.setMinimumWidth(390)
         right_layout = QVBoxLayout(right)
-        right_layout.addWidget(result_group)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(14)
+        right_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        right_layout.addWidget(result_card)
         right_layout.addWidget(actions)
-        right_layout.addWidget(candidate_group)
-        right_layout.addWidget(log_group, 1)
-
+        right_layout.addWidget(candidates, 1)
+        right_layout.addWidget(log_toggle)
+        right_layout.addWidget(self.log)
+        right_scroll = QScrollArea()
+        right_scroll.setObjectName("rightScroll")
+        right_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setMinimumWidth(410)
+        right_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        right_scroll.setWidget(right)
         splitter = QSplitter()
+        splitter.setHandleWidth(16)
+        splitter.setChildrenCollapsible(False)
         splitter.addWidget(left)
-        splitter.addWidget(right)
-        splitter.setStretchFactor(0, 4)
+        splitter.addWidget(right_scroll)
+        splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
-        splitter.setSizes([800, 500])
-        self.setCentralWidget(splitter)
-        self.setStyleSheet("""
-            QMainWindow, QDialog { background: #f5f7fb; }
-            QGroupBox { background: white; border: 1px solid #dde3ee;
-                border-radius: 10px; margin-top: 14px; padding: 18px 12px 12px; }
-            QGroupBox::title { subcontrol-origin: margin; left: 14px; color: #334155; }
-            QPushButton { background: #e8eef9; color: #1d365e; border: 1px solid #ccd8ec;
-                border-radius: 6px; padding: 9px 12px; }
-            QPushButton:hover { background: #d8e5fb; }
-            QPushButton:disabled { color: #9aa5b5; background: #f1f4f9; }
-            QComboBox, QLineEdit { padding: 7px; border: 1px solid #ccd8ec; border-radius: 5px; }
-            QPlainTextEdit { border: none; background: #f8fafc; color: #475569; }
-        """)
-        self.statusBar().showMessage("模型已加载，等待开启摄像头")
+        splitter.setSizes([850, 450])
+        root_layout.addWidget(splitter, 1)
+        self.setCentralWidget(root)
+        apply_theme(self)
+        self.statusBar().setSizeGripEnabled(False)
+        self.statusBar().showMessage("模型已就绪 · 开启摄像头开始使用")
 
         self.open_button.clicked.connect(self._open_camera)
         self.close_button.clicked.connect(self._stop_camera)
@@ -257,6 +362,8 @@ class MainWindow(QMainWindow):
         self.camera_worker = worker
         self.open_button.setEnabled(False)
         self.camera_combo.setEnabled(False)
+        self.device_badge.setText("连接中")
+        set_tone(self.device_badge, "warning")
         self.statusBar().showMessage("正在打开摄像头…")
         worker.start()
 
@@ -275,6 +382,8 @@ class MainWindow(QMainWindow):
                 self.capture_button.setEnabled(False)
                 self.close_button.setEnabled(False)
                 self.open_button.setEnabled(False)
+                self.device_badge.setText("释放中")
+                set_tone(self.device_badge, "warning")
                 self.statusBar().showMessage("正在等待摄像头释放…")
                 return False
             self.camera_worker = None
@@ -285,6 +394,8 @@ class MainWindow(QMainWindow):
         self.camera_combo.setEnabled(True)
         self.preview.clear()
         self.preview.setText("请选择设备并开启摄像头")
+        self.device_badge.setText("设备未连接")
+        set_tone(self.device_badge, "neutral")
         self._preview_times.clear()
         self._result_times.clear()
         self.rate_label.setText("预览 FPS —  |  有效结果 — 次/秒  |  排队 — ms")
@@ -294,7 +405,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "result_timer"):
             self.result_timer.stop()
         self.result_label.setText(message)
-        self.result_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #64748b;")
+        set_tone(self.result_label, "neutral")
         for label in (self.score_label, self.latency_label, self.updated_label):
             label.setText("—")
         self.result_preview.clear()
@@ -311,6 +422,8 @@ class MainWindow(QMainWindow):
             return
         self.capture_button.setEnabled(True)
         self.close_button.setEnabled(True)
+        self.device_badge.setText("设备已连接")
+        set_tone(self.device_badge, "success")
         self.statusBar().showMessage(f"摄像头已连接，实际分辨率 {width}×{height}")
         self._append_log(f"摄像头已连接，实际分辨率 {width}×{height}")
 
@@ -324,6 +437,8 @@ class MainWindow(QMainWindow):
         self.stream_id += 1
         self.inference_worker.clear_pending()
         self._clear_result("摄像头异常")
+        self.device_badge.setText("连接异常")
+        set_tone(self.device_badge, "error")
         self._append_log(message)
         self.statusBar().showMessage(message)
         QMessageBox.warning(self, "摄像头异常", message)
@@ -344,6 +459,8 @@ class MainWindow(QMainWindow):
         self.camera_combo.setEnabled(True)
         self.preview.clear()
         self.preview.setText("设备已断开，请选择设备并重新开启")
+        self.device_badge.setText("设备未连接")
+        set_tone(self.device_badge, "neutral")
 
     def _on_frame(self, packet: FramePacket) -> None:
         if packet.stream_id != self.stream_id:
@@ -386,15 +503,15 @@ class MainWindow(QMainWindow):
             return
         if result.status == "matched":
             label = result.person_name or "匹配成功"
-            color = "#137333"
+            tone = "success"
         elif result.status == "unknown":
             label = "未知人员"
-            color = "#b06000"
+            tone = "warning"
         else:
             label = result.message
-            color = "#b3261e"
+            tone = "error"
         self.result_label.setText(label)
-        self.result_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {color};")
+        set_tone(self.result_label, tone)
         self.score_label.setText("—" if result.score is None else f"{result.score:.4f}")
         algorithm_ms = result.timings_ms.get("algorithm_total", 0.0)
         self.latency_label.setText(f"{algorithm_ms:.1f} ms / {result.end_to_end_ms:.1f} ms")
@@ -439,7 +556,7 @@ class MainWindow(QMainWindow):
     def _on_scene(self, scene: SceneResult, image: np.ndarray | None, remaining: float) -> None:
         confirmed = sum(face.confirmed for face in scene.faces)
         self.result_label.setText(f"{scene.detected_count} 张人脸 · 已确认 {confirmed}")
-        self.result_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #1d365e;")
+        set_tone(self.result_label, "info")
         self.score_label.setText("见下方逐脸结果")
         algorithm_ms = scene.timings_ms.get("algorithm_total", 0)
         self.latency_label.setText(f"{algorithm_ms:.1f} ms / {scene.end_to_end_ms:.1f} ms")
@@ -501,6 +618,7 @@ class MainWindow(QMainWindow):
             return
         self._clear_result("系统异常")
         self.result_label.setText("系统异常")
+        set_tone(self.result_label, "error")
         self._append_log(message)
         self.statusBar().showMessage(message)
         self.continuous_check.setChecked(False)
@@ -541,9 +659,10 @@ class MainWindow(QMainWindow):
         persons = self.service.repository.list_persons()
         samples = sum(item.sample_count for item in persons)
         compatible = sum(self.service.matcher.snapshot.sample_counts)
+        self.person_count.setText(str(len(persons)))
+        self.sample_count.setText(str(samples))
         self.gallery_status.setText(
-            f"人员 {len(persons)} 名，样本 {samples} 张；当前模型兼容样本 {compatible} 张；"
-            f"库版本 {self.service.repository.gallery_version()}"
+            f"当前模型兼容样本 {compatible} 张 · 库版本 {self.service.repository.gallery_version()}"
         )
         if compatible == 0:
             self.gallery_status.setText(

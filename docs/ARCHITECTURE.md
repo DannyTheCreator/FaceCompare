@@ -12,6 +12,7 @@
 | `service.py` | Shared UI/experiment recognition and enrollment flows |
 | `workers.py` | Camera lifetime, latest-frame queue and enrollment tasks |
 | `ui/` | Controls, preview, snapshots and gallery management |
+| `ui/style.py` | Shared Qt theme, state colors and painted camera empty states |
 
 The service serializes inference and gallery updates with an `RLock`. Compatible embeddings are grouped by identity, averaged and normalized into read-only templates. Recognition results include the gallery version; camera packets/results include a stream ID. The UI rejects old versions, old devices and expired results.
 

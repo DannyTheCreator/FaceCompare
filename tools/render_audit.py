@@ -26,6 +26,7 @@ from app.ui.style import configure_application
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--config", type=Path, help="Model/config paths; gallery stays temporary")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     application = QApplication([])
@@ -39,7 +40,9 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix="facecompare-audit-") as temporary:
         root = Path(temporary)
-        cfg = replace(load_config(), storage=StorageConfig(root / "gallery.db", root / "samples"))
+        cfg = replace(
+            load_config(args.config), storage=StorageConfig(root / "gallery.db", root / "samples")
+        )
         service = FaceComparisonService(cfg)
         window = MainWindow(service)
         try:
