@@ -7,7 +7,7 @@
 - Complete high-resolution timing, queue/lock/log stages, per-variant video warmup, p50/p95 and output IDs.
 - Stable partial Top-K selection for larger galleries; interleaved synthetic baseline comparisons documented.
 - Non-blocking camera release, stale error filtering, background gallery actions and explicit enrollment sessions.
-- Portable facecompare-check skill, AGENTS.md, local validation entry point, experiment plan and evidence reports.
+- Added a local validation entry point and documented measured performance.
 - Reproducible local ORL preparation, explicit public image-split evaluation and measured recognition/performance results with documented low-resolution adaptations.
 
 ## 0.3.0
@@ -17,7 +17,7 @@
 - Added Top-K candidate explanations, multi-face image JSON and an analysis-snapshot view.
 - Added score-distribution, open-set operating-curve and scene reports from saved predictions.
 - Added regression tests for tracking, scene isolation, mode changes and reporting.
-- Documented comparisons with DeepFace, InsightFace and Supervision and tracking limitations.
+- Documented tracking limitations.
 
 ## 0.2.0
 
@@ -27,7 +27,7 @@
 - Added asynchronous enrollment, separate result snapshots, expiration and device/gallery guards.
 - Added manifest isolation and validation-only threshold calibration.
 - Added regression/UI/integration tests, Ruff and CI.
-- Added bilingual README, architecture, experiment, contribution and publishing documentation.
+- Added bilingual README, architecture, experiment and contribution documentation.
 - Added MIT application license, third-party notices and allowlisted source archives.
 - Fixed enrollment save-button state, identity-switch sample reuse and partial-write cleanup.
 - Fixed camera release, worker shutdown, nonfinite metrics and incomplete benchmark handling.

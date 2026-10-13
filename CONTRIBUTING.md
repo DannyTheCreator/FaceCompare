@@ -16,6 +16,6 @@ UI负责展示，算法通过service调用，持久化交给repository，实验�
 
 PR说明问题、结果及验证。算法修改记录数据划分、模型、阈值和性能口径；不使用伪造指标或注册照片上的表现证明泛化。
 
-项目约定见AGENTS.md；项目专用复核skill见skills/facecompare-check/SKILL.md。提交前确认实验test依旧强制冻结、测试数据库在临时目录、QThread关闭保护有效。截图工具只使用临时空库；profile_output及freeze文件保持本地。
+提交前确认实验test依旧强制冻结、测试数据库在临时目录、QThread关闭保护有效。截图工具只使用临时空库；profile_output及freeze文件保持本地。
 
 提交前查看 `git diff --cached --stat`。仓库不收录个人照片、身份信息、特征向量、数据库、真实实验清单和模型权重。截图与日志移除姓名、本机路径；Issue提供运行环境、步骤、预期和实际结果。

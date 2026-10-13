@@ -14,7 +14,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from app import __version__
 
 ROOT_FILES = {
-    "AGENTS.md",
     "main.py",
     "config.json",
     "requirements.txt",
@@ -37,28 +36,20 @@ def source_files(root: Path) -> list[Path]:
     selected = [root / name for name in ROOT_FILES if (root / name).is_file()]
     for directory in ("app", "experiments", "tests", "tools"):
         selected.extend((root / directory).rglob("*.py"))
-    for directory, patterns in (
-        ("docs", ("*.md",)),
-        (".github", ("*.yml", "*.md")),
-        ("skills/facecompare-check", ("SKILL.md",)),
-    ):
+    for directory, patterns in ((".github", ("*.yml", "*.md")),):
         for pattern in patterns:
             selected.extend((root / directory).rglob(pattern))
     for relative in (
         "data/.gitkeep",
         "experiments/results/.gitkeep",
         "experiments/manifests/example.csv",
+        "docs/ARCHITECTURE.md",
+        "docs/EXPERIMENTS.md",
+        "docs/PERFORMANCE.md",
+        "docs/PUBLIC_BENCHMARK.md",
+        "docs/操作手册.md",
+        "docs/实验记录模板.md",
         "docs/assets/ui-preview.png",
-        "docs/assets/audit/01-start.png",
-        "docs/assets/audit/02-device.png",
-        "docs/assets/audit/03-enroll.png",
-        "docs/assets/audit/04-recognition.png",
-        "docs/assets/audit/05-gallery.png",
-        "refine-logs/EXPERIMENT_PLAN.md",
-        "refine-logs/EXPERIMENT_PLAN_20261013.md",
-        "refine-logs/EXPERIMENT_TRACKER.md",
-        "refine-logs/EXPERIMENT_TRACKER_20261013.md",
-        "refine-logs/MANIFEST.md",
     ):
         if (root / relative).is_file():
             selected.append(root / relative)

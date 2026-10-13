@@ -73,4 +73,4 @@ $threshold = (Get-Content "$run/run.freeze.json" -Raw | ConvertFrom-Json).settin
 python experiments/report.py "$run/test/predictions.csv" --threshold $threshold --output "$run/report"
 ```
 
-查看 provenance.json、validation/summary.json、test/summary.json、benchmark/benchmark_runs.csv 和 benchmark_summary.csv。图像下载有大小与 SHA 校验；默认 pytest 不访问网络。数据仅供明确用途的本地实验，发布时继续使用白名单源码归档。
+查看 provenance.json、validation/summary.json、test/summary.json、benchmark/benchmark_runs.csv 和 benchmark_summary.csv。图像下载有大小与 SHA 校验；默认 pytest 不访问网络。数据用于本地实验，不随仓库分发。

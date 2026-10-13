@@ -41,3 +41,13 @@ experiments/results/
 experiments/manifests/*.csv
 !experiments/manifests/example.csv
 
+# Local assistant instructions, publishing notes and development audits.
+/AGENTS.md
+/skills/
+/refine-logs/
+/docs/PUBLISHING.md
+/docs/HARDENING.md
+/docs/UI_AUDIT.md
+/docs/UPGRADES.md
+/docs/assets/audit/
+

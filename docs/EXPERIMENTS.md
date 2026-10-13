@@ -47,7 +47,7 @@ python experiments/video_benchmark.py data/evaluation/fixed_video.mp4 --repeats 
 
 图片和视频均输出阶段p50/p95与候选ID。视频逐变体预热后重新打开同一视频，另外记录queue_wait。benchmark不带--freeze时明确为探索性测量；视频无标签实验不输出识别准确率。标准库始终只读。
 
-不具备已核验数据时，运行`python tools/synthetic_benchmarks.py`验证现有脚本；运行`python tools/profile_pipeline.py --label unique-name`测阶段。输入明确标记为合成，输出只写profile_output，不作为最终识别率。采集清单、预算、主张和执行顺序见[实验计划](../refine-logs/EXPERIMENT_PLAN.md)，完成状态见[跟踪表](../refine-logs/EXPERIMENT_TRACKER.md)。
+不具备已核验数据时，运行`python tools/synthetic_benchmarks.py`验证现有脚本；运行`python tools/profile_pipeline.py --label unique-name`测阶段。输入明确标记为合成，输出只写profile_output，不作为最终识别率。使用[实验记录模板](实验记录模板.md)记录运行环境、数据划分、锁定阈值、原始计数和性能结果。
 
 ## 图表与多人评估
 

@@ -1,8 +1,8 @@
 # 2026-10-13 本地性能分析
 
-使用 aris:system-profile 与 aris:analyze-results。未读取用户真实图库。本页输入为合成向量、常色图片和常色视频；结论仅限工程性能。随后完成的真实公开照片 B0/B1/B2/B4 测量和输出差异单列在 [ORL公开基准](PUBLIC_BENCHMARK.md)，不与本页合成结果混算。
+本报告未使用日常人员图库。本页输入为合成向量、常色图片和常色视频；结论仅限工程性能。随后完成的真实公开照片 B0/B1/B2/B4 测量和输出差异单列在 [ORL公开基准](PUBLIC_BENCHMARK.md)，不与本页合成结果混算。
 
-环境：Windows 10 API build 26200、Python 3.11.7、NumPy 2.2.6、OpenCV 4.12.0、AMD64 Family 25 Model 97 Stepping 2。系统 CIM 查询无访问权限，未猜测 CPU 商品型号。阶段/视频测量设 OpenCV 1 线程；匹配交替 A/B 在同一进程（OpenCV 默认 32 线程，矩阵乘法由 NumPy 执行）。各自前后设置一致。
+环境：Windows 10 API build 26200、Python 3.11.7、NumPy 2.2.6、OpenCV 4.12.0、AMD64 Family 25 Model 97 Stepping 2。未记录 CPU 商品型号。阶段/视频测量设 OpenCV 1 线程；匹配交替 A/B 在同一进程（OpenCV 默认 32 线程，矩阵乘法由 NumPy 执行）。各自前后设置一致。
 
 ## 定位瓶颈
 
@@ -22,7 +22,7 @@
 
 900 个查询的 Top-K 身份变化为 0，最大分数差为 0。额外测试覆盖全并列分数、K 超过库大小和部分选择边界。小库无可观收益；1,000 模板 p95 波动较大，因此不声称稳定的整体加速倍数。独立 before/after 全链路微基准的 SFace 波动没有对应代码修改，不能归因于本轮优化。
 
-原始数据在本地 `profile_output/comparison.json`、`before.json`、`after.json`；cProfile 文件为 before.prof / after.prof。公开源码不自动包含这些输出。复现：`python tools/compare_matching.py dist/baseline-20261013-before-hardening.zip`，只能传可信本地源码 ZIP；基线 SHA 见 HARDENING.md。
+原始数据在本地 `profile_output/comparison.json`、`before.json`、`after.json`；cProfile 文件为 before.prof / after.prof。公开源码不自动包含这些输出。历史 A/B 使用的优化前源码归档未随仓库分发，仅用当前源码不能重建表中的“修改前”结果。持有可信基线时，可运行 `python tools/compare_matching.py /path/to/baseline.zip` 重新测量。
 
 ## 队列与 B0–B4
 
@@ -44,15 +44,14 @@
 - 端到端时延：帧进入应用到 service 返回，包含排队/锁等待/算法及启用时的日志写入，不含曝光前和最终屏幕呈现。
 - algorithm_total：锁获取后的算法墙钟；queue_wait、lock_wait、log_write 独立记录，不叠加进算法总时间。
 
-## 测量代码变更清单
+## 测量工具
 
-| 文件 | 类型 | 内容 |
-| --- | --- | --- |
-| tools/profile_pipeline.py | 新增 | 有界阶段微基准、预热、原始时延和 cProfile |
-| tools/compare_matching.py | 新增 | 同进程交替 A/B、3 种子、输出一致性 |
-| tools/synthetic_benchmarks.py | 新增 | 临时空库和合成输入，复用原脚本 |
-| app/service.py、workers.py | 修改 | 锁等待、日志、队列等待及高精度完成时钟 |
-| experiments/benchmark.py | 修改 | p50、候选 ID、线程设置、输入指纹 |
-| experiments/video_benchmark.py | 修改 | 预热、阶段 p50/p95、队列等待、输入指纹 |
+| 工具 | 用途 |
+| --- | --- |
+| tools/profile_pipeline.py | 阶段微基准、预热、原始时延和 cProfile |
+| tools/compare_matching.py | 与可信源码基线交替 A/B，检查 Top-K 输出一致性 |
+| tools/synthetic_benchmarks.py | 在临时空库和合成输入上运行现有图片/视频基准 |
+| experiments/benchmark.py | 固定图像的算法 p50/p95、输出差异和输入指纹 |
+| experiments/video_benchmark.py | 固定视频的阶段/队列 p50/p95、丢帧和输入指纹 |
 
-测量工具可单独移除；运行时计时同时用于结果有效期和界面反馈。没有 GPU 训练、租用算力或后台持续采集。
+使用 `python tools/profile_pipeline.py --label unique-run-name` 测量当前阶段时延，使用 `python tools/synthetic_benchmarks.py` 运行合成图像和视频对照。运行时计时同时用于结果有效期和界面反馈。
