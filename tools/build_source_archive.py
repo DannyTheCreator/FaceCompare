@@ -20,7 +20,7 @@ ROOT_FILES = {
     "requirements-dev.txt",
     "pyproject.toml",
     "README.md",
-    "README_EN.md",
+    "README.zh-CN.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
     "CONTRIBUTING.md",
