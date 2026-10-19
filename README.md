@@ -78,12 +78,12 @@ python main.py --version
 
 ```mermaid
 flowchart LR
-    A[Camera or image] --> B[YuNet face boxes and five landmarks]
-    B --> C{Face quality accepted?}
-    C -->|No| D[Capture status feedback]
-    C -->|Yes| E[SFace alignment and feature extraction]
-    E --> F[L2 normalization and identity template matching]
-    F --> G{Highest cosine score meets threshold?}
+    A[Camera / image] --> B[YuNet<br/>Face + landmarks]
+    B --> C{Quality accepted?}
+    C -->|No| D[Capture feedback]
+    C -->|Yes| E[SFace<br/>Align + embed]
+    E --> F[L2 normalize<br/>Match templates]
+    F --> G{Threshold met?}
     G -->|Yes| H[Person name]
     G -->|No| I[Unknown person]
 ```
