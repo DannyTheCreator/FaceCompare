@@ -2,9 +2,13 @@
 
 A local desktop face comparison application using **YuNet**, **SFace**, **OpenCV**, and **PySide6**. Supports USB camera capture, incremental enrollment, open-set 1:N identification, and reproducible threshold and latency experiments.
 
-[中文说明](README.zh-CN.md) · [User guide (Chinese)](docs/操作手册.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
+[English](README.md) · [Chinese](README.zh-CN.md) · [User guide (Chinese)](docs/操作手册.md) · [Architecture](docs/ARCHITECTURE.md) · [Experiments (Chinese)](docs/EXPERIMENTS.md) · [Contributing](CONTRIBUTING.md)
 
 [![Checks](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml/badge.svg)](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml)
+![Python 3.11–3.12](https://img.shields.io/badge/Python-3.11%E2%80%933.12-3776AB?logo=python&logoColor=white)
+![OpenCV 4.12](https://img.shields.io/badge/OpenCV-4.12-5C3EE8?logo=opencv&logoColor=white)
+![PySide6](https://img.shields.io/badge/UI-PySide6-41CD52)
+![Code license MIT](https://img.shields.io/badge/Code-MIT-blue)
 
 ![FaceCompare recognition workspace](docs/assets/ui-preview.png)
 

@@ -2,7 +2,7 @@
 
 **基于 YuNet 与 SFace 的本地人脸识别桌面应用。** 使用普通 CPU 完成摄像头采集、人员录入、多人识别与未知人员拒识，并提供图片识别命令行和实验分析工具。
 
-[English](README.md) · [操作手册](docs/操作手册.md) · [架构说明](docs/ARCHITECTURE.md) · [实验复现](docs/EXPERIMENTS.md) · [贡献指南](CONTRIBUTING.md)
+[English](README.md) · [Chinese](README.zh-CN.md) · [User guide (Chinese)](docs/操作手册.md) · [Architecture](docs/ARCHITECTURE.md) · [Experiments (Chinese)](docs/EXPERIMENTS.md) · [Contributing](CONTRIBUTING.md)
 
 [![Checks](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml/badge.svg)](https://github.com/DannyTheCreator/FaceCompare/actions/workflows/ci.yml)
 ![Python 3.11–3.12](https://img.shields.io/badge/Python-3.11%E2%80%933.12-3776AB?logo=python&logoColor=white)
